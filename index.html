@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Release Butler Dashboard</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: #000000;
+            color: #ffffff;
+        }
+        
+        .app {
+            min-height: 100vh;
+            background-color: #000000;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dashboard-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .dashboard-title {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 0;
+            margin-top: 40px;
+            margin-bottom: 40px;
+            text-align: center;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .date-blocks-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 40px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 0 20px;
+        }
+
+        .date-block {
+            flex: 1;
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid #333333;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .date-block:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
+        }
+
+        .date-block.today {
+            flex: 1.3;
+            background: linear-gradient(135deg, #1a2a1a, #2a3a2a);
+            border-color: #00ff88;
+            box-shadow: 0 8px 16px rgba(0, 255, 136, 0.2);
+        }
+
+        .date-block.today::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
+        }
+
+        .date-block.yesterday {
+            flex: 0.85;
+            background: linear-gradient(135deg, #1a1a2a, #2a2a3a);
+            border-color: #666666;
+        }
+
+        .date-block.tomorrow {
+            flex: 0.85;
+            background: linear-gradient(135deg, #2a1a1a, #3a2a2a);
+            border-color: #ff6b6b;
+        }
+
+        .date-label {
+            font-size: 0.9rem;
+            color: #888888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .date-display {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 15px;
+            line-height: 1.2;
+        }
+
+        .day-name {
+            font-size: 1.2rem;
+            color: #cccccc;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .event-section {
+            margin-top: 20px;
+        }
+
+        .event-title {
+            font-size: 0.9rem;
+            color: #888888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .event-info {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .event-name {
+            font-size: 1.1rem;
+            color: #ffffff;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .event-details {
+            font-size: 0.9rem;
+            color: #cccccc;
+            line-height: 1.4;
+        }
+
+        .no-event {
+            font-size: 0.9rem;
+            color: #666666;
+            font-style: italic;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .date-block.today .event-info {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: rgba(0, 255, 136, 0.3);
+        }
+
+        .quick-access-bar {
+            background-color: #111111;
+            border-bottom: 1px solid #333333;
+            padding: 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .nav-item {
+            padding: 15px 25px;
+            color: #ffffff;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            user-select: none;
+        }
+
+        .nav-item:hover {
+            background-color: #222222;
+            border-bottom-color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .nav-item.active {
+            background-color: #333333;
+            border-bottom-color: #ffffff;
+        }
+
+        .nav-item:active {
+            transform: translateY(0);
+            background-color: #333333;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .current-date {
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 1px solid #333333;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .current-date h2 {
+            margin: 0 0 10px 0;
+            color: #ffffff;
+            font-size: 1.5rem;
+        }
+
+        .date-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+
+        .calendar-container {
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid #333333;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .calendar-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 10px;
+        }
+
+        .calendar-nav button {
+            background: #333333;
+            border: none;
+            color: #ffffff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .calendar-nav button:hover {
+            background: #444444;
+            transform: translateY(-1px);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .calendar-day-header {
+            padding: 15px 10px;
+            text-align: center;
+            font-weight: bold;
+            color: #888888;
+            font-size: 0.9rem;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #333333;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            background: #1a1a1a;
+            min-height: 80px;
+            flex-direction: column;
+            padding: 5px;
+        }
+
+        .calendar-day:hover {
+            background: #2a2a2a;
+            border-color: #555555;
+            transform: scale(1.05);
+        }
+
+        .calendar-day.today {
+            background: linear-gradient(135deg, #00ff88, #00cc6a);
+            color: #000000;
+            font-weight: bold;
+            border-color: #00ff88;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+        }
+
+        .calendar-day.other-month {
+            color: #555555;
+            background: #0f0f0f;
+        }
+
+        .day-number {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        /* Multi-day event styles */
+        .event-indicator {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            height: 4px;
+            border-radius: 2px;
+            z-index: 2;
+        }
+
+        .event-indicator.multi-day-start {
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+        }
+
+        .event-indicator.multi-day-end {
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+
+        .event-indicator.multi-day-middle {
+            border-radius: 0;
+        }
+
+        .event-indicator.ongoing {
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
+        }
+
+        .event-indicator.completed {
+            background: #666666;
+        }
+
+        .event-indicator.upcoming {
+            background: #ff6b6b;
+        }
+
+        .event-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            border-radius: 5px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .calendar-day:hover .event-tooltip {
+            opacity: 1;
+        }
+
+        .event-duration {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            font-size: 0.7rem;
+            color: #888888;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 1px 4px;
+            border-radius: 2px;
+        }
+
+        .release-train-info {
+            margin-top: 30px;
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #333333;
+        }
+
+        .release-train-info h3 {
+            margin: 0 0 15px 0;
+            color: #ffffff;
+            font-size: 1.3rem;
+        }
+
+        .train-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: #222222;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444444;
+        }
+
+        .stat-label {
+            color: #888888;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #ffffff;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        /* Calendar Selector Styles */
+        .calendar-controls {
+            margin-bottom: 20px;
+        }
+
+        .signoff-controls {
+            margin-bottom: 20px;
+        }
+
+        .calendar-selector {
+            position: relative;
+            display: inline-block;
+            min-width: 250px;
+        }
+
+        .calendar-selector-header {
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            border: 1px solid #333333;
+            border-radius: 8px;
+            padding: 12px 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .calendar-selector-header:hover {
+            background: linear-gradient(135deg, #2a2a2a, #3a3a3a);
+            border-color: #555555;
+        }
+
+        .selected-calendar {
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .dropdown-arrow {
+            color: #888888;
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+        }
+
+        .calendar-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            border: 1px solid #333333;
+            border-radius: 8px;
+            margin-top: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .calendar-option {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #ffffff;
+            transition: background-color 0.2s ease;
+        }
+
+        .calendar-option:hover {
+            background-color: #333333;
+        }
+
+        .calendar-option.selected {
+            background-color: #444444;
+            font-weight: bold;
+        }
+
+        .calendar-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid #333333;
+            flex-shrink: 0;
+        }
+
+        .signoff-layout {
+            display: flex;
+            gap: 30px;
+        }
+
+        .signoff-controls {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .signoff-calendar {
+            flex: 1;
+            min-width: 300px; /* Ensure calendar has enough space */
+            max-width: 50%; /* Prevent calendar from taking too much space */
+            overflow: hidden; /* Prevent calendar from overflowing */
+        }
+
+        .signoff-calendar .calendar {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .signoff-calendar .calendar-grid {
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .signoff-calendar .calendar-day {
+            min-width: 30px;
+            max-width: 40px;
+            height: 40px;
+            font-size: 0.9rem;
+            overflow: hidden;
+        }
+
+        .signoff-type-icon {
+            font-size: 1.2rem;
+            margin-right: 8px;
+        }
+
+        .dropdown-section {
+            margin-bottom: 15px;
+        }
+
+        .dropdown-heading {
+            color: #888888;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .pod-icon {
+            font-size: 1.2rem;
+            margin-right: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-wrap: wrap;
+                justify-content: space-around;
+            }
+            
+            .nav-item {
+                padding: 12px 15px;
+                font-size: 0.9rem;
+            }
+            
+            .dashboard-title {
+                font-size: 2rem;
+            }
+
+            .calendar-container {
+                padding: 20px;
+            }
+
+            .calendar-title {
+                font-size: 1.5rem;
+            }
+
+            .calendar-day {
+                font-size: 0.8rem;
+                min-height: 60px;
+            }
+
+            .signoff-layout {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .signoff-controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Multi-day event management
+        const MultiDayEventManager = {
+            // Events array - will be loaded from JSON
+            events: [],
+
+            // Load events from JSON file
+            async loadEventsFromFile() {
+                try {
+                    console.log('Attempting to load events from events.json...');
+                    const response = await fetch('events.json');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    console.log('Raw JSON data:', data);
+                    this.events = data.events || [];
+                    console.log(`Successfully loaded ${this.events.length} events from events.json`);
+                    console.log('Events loaded:', this.events);
+                    return this.events;
+                } catch (error) {
+                    console.error('Error loading events from JSON file:', error);
+                    // Fallback to sample events if JSON loading fails
+                    this.loadSampleEvents();
+                    return this.events;
+                }
+            },
+
+            // Load sample events as fallback
+            loadSampleEvents() {
+                this.events = [
+                    {
+                        id: "sample-001",
+                        title: "Sample Release Planning",
+                        description: "Sample release planning meeting",
+                        startDate: "2025-08-15",
+                        endDate: "2025-08-15",
+                        type: "meeting",
+                        priority: "high",
+                        calendarId: "august_t1",
+                        color: "#ff6b6b"
+                    }
+                ];
+                console.log('Loaded sample events as fallback');
+            },
+
+            // Initialize events
+            initializeEvents() {
+                console.log(`Events initialized with ${this.events.length} events`);
+                console.log('Events:', this.events);
+                return this.events;
+            },
+
+            // Get events for a specific date
+            getEventsForDate(date) {
+                const dateStr = date.toISOString().slice(0, 10);
+                console.log(`Looking for events on ${dateStr}, total events: ${this.events.length}`);
+                
+                const filteredEvents = this.events.filter(event => {
+                    const start = new Date(event.startDate);
+                    const end = new Date(event.endDate);
+                    const current = new Date(dateStr);
+                    const isInRange = current >= start && current <= end;
+                    
+                    if (isInRange) {
+                        console.log(`Found event: ${event.title} (${event.startDate} to ${event.endDate})`);
+                    }
+                    
+                    return isInRange;
+                });
+                
+                console.log(`Found ${filteredEvents.length} events for ${dateStr}`);
+                return filteredEvents;
+            },
+
+            // Get event position for multi-day display
+            getEventPosition(event, date) {
+                const start = new Date(event.startDate);
+                const end = new Date(event.endDate);
+                const current = new Date(date);
+                
+                if (current.getTime() === start.getTime()) {
+                    return 'multi-day-start';
+                } else if (current.getTime() === end.getTime()) {
+                    return 'multi-day-end';
+                } else {
+                    return 'multi-day-middle';
+                }
+            },
+
+            // Calculate event status
+            getEventStatus(event) {
+                const today = new Date();
+                const start = new Date(event.startDate);
+                const end = new Date(event.endDate);
+                
+                if (today < start) return 'upcoming';
+                if (today > end) return 'completed';
+                return 'ongoing';
+            },
+
+            // Add new event
+            addEvent(eventData) {
+                const newEvent = {
+                    id: `event-${Date.now()}`,
+                    ...eventData,
+                    createdAt: new Date().toISOString()
+                };
+                this.events.push(newEvent);
+                return newEvent;
+            },
+
+            // Remove event
+            removeEvent(eventId) {
+                this.events = this.events.filter(event => event.id !== eventId);
+            },
+
+            // Get all events
+            getAllEvents() {
+                return this.events;
+            }
+        };
+
+        // Calendar Management System
+        const CalendarManager = {
+            // Generate 24 train calendars (2 per month)
+            generateTrainCalendars() {
+                const months = [
+                    'january', 'february', 'march', 'april', 'may', 'june',
+                    'july', 'august', 'september', 'october', 'november', 'december'
+                ];
+                
+                const calendars = [];
+                
+                months.forEach(month => {
+                    // Train 1 for each month
+                    calendars.push({
+                        id: `${month}_t1`,
+                        name: `${month.charAt(0).toUpperCase() + month.slice(1)} Train 1`,
+                        month: month,
+                        trainNumber: 1,
+                        color: this.getTrainColor(month, 1),
+                        visible: true
+                    });
+                    
+                    // Train 2 for each month
+                    calendars.push({
+                        id: `${month}_t2`,
+                        name: `${month.charAt(0).toUpperCase() + month.slice(1)} Train 2`,
+                        month: month,
+                        trainNumber: 2,
+                        color: this.getTrainColor(month, 2),
+                        visible: true
+                    });
+                });
+                
+                return calendars;
+            },
+
+            // Get unique color for each train
+            getTrainColor(month, trainNumber) {
+                const colors = [
+                    '#00ff88', '#ff6b6b', '#4a90e2', '#ffa500', '#9c27b0',
+                    '#00bcd4', '#ff5722', '#4caf50', '#e91e63', '#3f51b5',
+                    '#ff9800', '#795548', '#607d8b', '#9e9e9e', '#f44336',
+                    '#2196f3', '#4caf50', '#ffeb3b', '#9c27b0', '#00bcd4',
+                    '#ff5722', '#795548', '#607d8b', '#9e9e9e'
+                ];
+                
+                const monthIndex = [
+                    'january', 'february', 'march', 'april', 'may', 'june',
+                    'july', 'august', 'september', 'october', 'november', 'december'
+                ].indexOf(month);
+                
+                const colorIndex = (monthIndex * 2) + (trainNumber - 1);
+                return colors[colorIndex % colors.length];
+            },
+
+            // Get all calendars
+            getAllCalendars() {
+                return this.generateTrainCalendars();
+            },
+
+            // Get calendar by ID
+            getCalendarById(calendarId) {
+                return this.getAllCalendars().find(cal => cal.id === calendarId);
+            },
+
+            // Get events for specific calendar
+            getEventsForCalendar(calendarId, events) {
+                if (calendarId === 'all_trains') {
+                    return events; // Return all events
+                }
+                return events.filter(event => event.calendarId === calendarId);
+            }
+        };
+
+        // Calendar Selector Component
+        const CalendarSelector = ({ selectedCalendar, onCalendarChange }) => {
+            const [isOpen, setIsOpen] = useState(false);
+            const calendars = CalendarManager.getAllCalendars();
+            
+            const handleSelect = (calendarId) => {
+                onCalendarChange(calendarId);
+                setIsOpen(false);
+            };
+
+            const getSelectedCalendarName = () => {
+                if (selectedCalendar === 'all_trains') {
+                    return 'All Release Trains';
+                }
+                const calendar = CalendarManager.getCalendarById(selectedCalendar);
+                return calendar ? calendar.name : 'Select Calendar';
+            };
+
+            return (
+                <div className="calendar-selector">
+                    <div 
+                        className="calendar-selector-header"
+                        onClick={() => setIsOpen(!isOpen)}
+                    >
+                        <span className="selected-calendar">
+                            📅 {getSelectedCalendarName()}
+                        </span>
+                        <span className="dropdown-arrow">
+                            {isOpen ? '▲' : '▼'}
+                        </span>
+                    </div>
+                    
+                    {isOpen && (
+                        <div className="calendar-dropdown">
+                            <div 
+                                className={`calendar-option ${selectedCalendar === 'all_trains' ? 'selected' : ''}`}
+                                onClick={() => handleSelect('all_trains')}
+                            >
+                                <span className="calendar-color" style={{backgroundColor: '#ffffff'}} />
+                                🌟 All Release Trains
+                            </div>
+                            
+                            {calendars.map(calendar => (
+                                <div 
+                                    key={calendar.id}
+                                    className={`calendar-option ${selectedCalendar === calendar.id ? 'selected' : ''}`}
+                                    onClick={() => handleSelect(calendar.id)}
+                                >
+                                    <span 
+                                        className="calendar-color" 
+                                        style={{backgroundColor: calendar.color}}
+                                    />
+                                    {calendar.name}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // Enhanced calendar day component
+        const CalendarDay = ({ date, isCurrentMonth, isToday, getEventsForDate }) => {
+            const [showTooltip, setShowTooltip] = useState(false);
+            
+            const dayEvents = getEventsForDate(date);
+            
+            return (
+                <div 
+                    className={`calendar-day ${!isCurrentMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}`}
+                    onMouseEnter={() => setShowTooltip(true)}
+                    onMouseLeave={() => setShowTooltip(false)}
+                >
+                    <span className="day-number">{date.getDate()}</span>
+                    
+                    {dayEvents.map((event, index) => {
+                        const position = MultiDayEventManager.getEventPosition(event, date);
+                        const status = MultiDayEventManager.getEventStatus(event);
+                        
+                        // Calculate duration
+                        const start = new Date(event.startDate);
+                        const end = new Date(event.endDate);
+                        const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                        
+                        return (
+                            <div
+                                key={event.id}
+                                className={`event-indicator ${position} ${status}`}
+                                style={{ 
+                                    backgroundColor: event.color,
+                                    top: `${8 + (index * 6)}px`
+                                }}
+                                title={`${event.title} (${duration} days)`}
+                            />
+                        );
+                    })}
+                    
+                    {showTooltip && dayEvents.length > 0 && (
+                        <div className="event-tooltip">
+                            {dayEvents.map(event => {
+                                const start = new Date(event.startDate);
+                                const end = new Date(event.endDate);
+                                const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                                return (
+                                    <div key={event.id}>
+                                        {event.title} ({duration} days)
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                    
+                    {dayEvents.length > 0 && (
+                        <div className="event-duration">
+                            {dayEvents.length} event{dayEvents.length > 1 ? 's' : ''}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const QuickAccessBar = ({ activeTab, onTabChange }) => {
+            const handleNavClick = (item) => {
+                console.log(`Clicked on: ${item}`);
+                onTabChange(item);
+            };
+
+            return (
+                <nav className="quick-access-bar">
+                    <div className="nav-container">
+                        <div 
+                            className={`nav-item ${activeTab === 'Dashboard' ? 'active' : ''}`} 
+                            onClick={() => handleNavClick('Dashboard')}
+                        >
+                            Dashboard
+                        </div>
+                        <div 
+                            className={`nav-item ${activeTab === 'ReleaseCalendar' ? 'active' : ''}`} 
+                            onClick={() => handleNavClick('ReleaseCalendar')}
+                        >
+                            Release Calendar
+                        </div>
+                        <div 
+                            className={`nav-item ${activeTab === 'SignOff' ? 'active' : ''}`} 
+                            onClick={() => handleNavClick('SignOff')}
+                        >
+                            Sign off
+                        </div>
+                        <div 
+                            className={`nav-item ${activeTab === 'Integrations' ? 'active' : ''}`} 
+                            onClick={() => handleNavClick('Integrations')}
+                        >
+                            Integrations
+                        </div>
+                        <div 
+                            className={`nav-item ${activeTab === 'Settings' ? 'active' : ''}`} 
+                            onClick={() => handleNavClick('Settings')}
+                        >
+                            Settings
+                        </div>
+                    </div>
+                </nav>
+            );
+        };
+
+        const Calendar = ({ selectedCalendar = 'all_trains', onMonthChange }) => {
+            const [currentDate, setCurrentDate] = useState(new Date());
+            const [selectedDate, setSelectedDate] = useState(new Date());
+            
+            console.log('Calendar currentDate:', currentDate);
+            console.log('Calendar selectedDate:', selectedDate);
+
+            // Auto-navigate to correct month based on selected train
+            useEffect(() => {
+                if (selectedCalendar === 'all_trains') {
+                    // Show current month for "All Release Trains"
+                    setCurrentDate(new Date());
+                } else {
+                    // Extract month from calendar ID (e.g., "august_t1" -> August)
+                    const calendar = CalendarManager.getCalendarById(selectedCalendar);
+                    if (calendar) {
+                        const monthName = calendar.month;
+                        const monthIndex = [
+                            'january', 'february', 'march', 'april', 'may', 'june',
+                            'july', 'august', 'september', 'october', 'november', 'december'
+                        ].indexOf(monthName);
+                        
+                        if (monthIndex !== -1) {
+                            // Navigate to the train's month in current year
+                            const trainMonth = new Date(new Date().getFullYear(), monthIndex, 1);
+                            setCurrentDate(trainMonth);
+                        }
+                    }
+                }
+            }, [selectedCalendar]);
+
+            const getDaysInMonth = (date) => {
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                const daysInMonth = lastDay.getDate();
+                const startingDay = firstDay.getDay();
+                
+                const days = [];
+                
+                // Add days from previous month
+                for (let i = startingDay - 1; i >= 0; i--) {
+                    const prevDate = new Date(year, month, -i);
+                    days.push({ date: prevDate, isCurrentMonth: false });
+                }
+                
+                // Add days from current month
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const currentDate = new Date(year, month, i);
+                    days.push({ date: currentDate, isCurrentMonth: true });
+                }
+                
+                // Add days from next month to complete the grid
+                const remainingDays = 42 - days.length; // 6 rows * 7 days
+                for (let i = 1; i <= remainingDays; i++) {
+                    const nextDate = new Date(year, month + 1, i);
+                    days.push({ date: nextDate, isCurrentMonth: false });
+                }
+                
+                return days;
+            };
+
+            const isToday = (date) => {
+                const today = new Date();
+                return date.toDateString() === today.toDateString();
+            };
+
+            const formatDate = (date) => {
+                return date.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            };
+
+            const goToPreviousMonth = () => {
+                const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+                setCurrentDate(newDate);
+                if (onMonthChange) {
+                    onMonthChange(newDate);
+                }
+            };
+
+            const goToNextMonth = () => {
+                const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+                setCurrentDate(newDate);
+                if (onMonthChange) {
+                    onMonthChange(newDate);
+                }
+            };
+
+            const goToToday = () => {
+                const today = new Date();
+                setCurrentDate(today);
+                if (onMonthChange) {
+                    onMonthChange(today);
+                }
+            };
+
+            // Get filtered events based on selected calendar
+            const getFilteredEventsForDate = (date) => {
+                const allEvents = MultiDayEventManager.getEventsForDate(date);
+                return CalendarManager.getEventsForCalendar(selectedCalendar, allEvents);
+            };
+
+            const days = getDaysInMonth(currentDate);
+            const monthNames = [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+            ];
+
+            return (
+                <div className="calendar-container">
+                    <div className="calendar-header">
+                        <h2 className="calendar-title">
+                            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                        </h2>
+                        <div className="calendar-nav">
+                            <button onClick={goToPreviousMonth}>‹</button>
+                            <button onClick={goToToday}>Today</button>
+                            <button onClick={goToNextMonth}>›</button>
+                        </div>
+                    </div>
+                    
+                    <div className="calendar-grid">
+                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                            <div key={day} className="calendar-day-header">{day}</div>
+                        ))}
+                        
+                        {days.map((day, index) => (
+                            <CalendarDay
+                                key={index}
+                                date={day.date}
+                                isCurrentMonth={day.isCurrentMonth}
+                                isToday={isToday(day.date)}
+                                getEventsForDate={getFilteredEventsForDate}
+                            />
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const DateBlock = ({ date, label, className, events = [] }) => {
+            const formatDate = (date) => {
+                return date.toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            };
+
+            const formatDayName = (date) => {
+                return date.toLocaleDateString('en-US', {
+                    weekday: 'long'
+                });
+            };
+
+            const getEventForDate = (date) => {
+                // Get real events from MultiDayEventManager
+                const events = MultiDayEventManager.getEventsForDate(date);
+                
+                // Transform events to match the expected format for DateBlock
+                return events.map(event => ({
+                    name: event.title,
+                    details: `${event.type} - ${event.description}`,
+                    color: event.color,
+                    status: MultiDayEventManager.getEventStatus(event)
+                }));
+            };
+
+            const dayEvents = getEventForDate(date);
+
+            return (
+                <div className={`date-block ${className}`}>
+                    <div className="date-label">{label}</div>
+                    <div className="date-display">{formatDate(date)}</div>
+                    <div className="day-name">{formatDayName(date)}</div>
+                    
+                    <div className="event-section">
+                        <div className="event-title">Events</div>
+                        {dayEvents.length > 0 ? (
+                            <div className="event-info">
+                                {dayEvents.map((ev, idx) => (
+                                    <div key={idx} style={{marginBottom: idx < dayEvents.length - 1 ? '10px' : '0'}}>
+                                        <div className="event-name">{ev.name}</div>
+                                        <div className="event-details" style={{color: ev.color}}>
+                                            {ev.details}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="no-event">No events scheduled</div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const DashboardContent = () => {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+
+            return (
+                <div className="dashboard-content">
+                    <h1 className="dashboard-title">Release Butler</h1>
+                    
+                    <div className="date-blocks-container">
+                        <DateBlock 
+                            date={yesterday} 
+                            label="Yesterday" 
+                            className="yesterday"
+                        />
+                        <DateBlock 
+                            date={today} 
+                            label="Today" 
+                            className="today"
+                        />
+                        <DateBlock 
+                            date={tomorrow} 
+                            label="Tomorrow" 
+                            className="tomorrow"
+                        />
+                    </div>
+                </div>
+            );
+        };
+
+        const ReleaseTrainsTab = () => {
+            const [currentDate] = useState(new Date());
+            const [selectedCalendar, setSelectedCalendar] = useState('all_trains');
+
+            const formatCurrentDate = (date) => {
+                return date.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            };
+
+            const handleCalendarChange = (calendarId) => {
+                setSelectedCalendar(calendarId);
+            };
+
+            const handleMonthChange = (newDate) => {
+                // Don't change the dropdown if "All Release Trains" is currently selected
+                if (selectedCalendar === 'all_trains') {
+                    return;
+                }
+                
+                // Get the month name from the new date
+                const monthNames = [
+                    'january', 'february', 'march', 'april', 'may', 'june',
+                    'july', 'august', 'september', 'october', 'november', 'december'
+                ];
+                const monthName = monthNames[newDate.getMonth()];
+                
+                // Try to find the corresponding train calendar for this month
+                const train1CalendarId = `${monthName}_t1`;
+                const train2CalendarId = `${monthName}_t2`;
+                
+                // Check if we have events for either train in this month
+                const allCalendars = CalendarManager.getAllCalendars();
+                const hasTrain1 = allCalendars.some(cal => cal.id === train1CalendarId);
+                const hasTrain2 = allCalendars.some(cal => cal.id === train2CalendarId);
+                
+                if (hasTrain1 || hasTrain2) {
+                    // Prefer train 1 if available, otherwise train 2
+                    const newCalendarId = hasTrain1 ? train1CalendarId : train2CalendarId;
+                    setSelectedCalendar(newCalendarId);
+                } else {
+                    // If no specific train for this month, show all trains
+                    setSelectedCalendar('all_trains');
+                }
+            };
+
+            return (
+                <div className="content-area">
+                    <div className="current-date">
+                        <h2>Current Date</h2>
+                        <div className="date-display">{formatCurrentDate(currentDate)}</div>
+                    </div>
+                    
+                    <div className="calendar-controls">
+                        <CalendarSelector 
+                            selectedCalendar={selectedCalendar}
+                            onCalendarChange={handleCalendarChange}
+                        />
+                    </div>
+                    
+                    <Calendar selectedCalendar={selectedCalendar} onMonthChange={handleMonthChange} />
+                    
+                    {/* Release Train Overview Panel - Commented out for now
+                    <div className="release-train-info">
+                        <h3>Release Train Overview</h3>
+                        <div className="train-stats">
+                            <div className="stat-card">
+                                <div className="stat-label">Trains This Month</div>
+                                <div className="stat-value">2</div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-label">Active Trains</div>
+                                <div className="stat-value">1</div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-label">Upcoming Events</div>
+                                <div className="stat-value">8</div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-label">Days to Next Train</div>
+                                <div className="stat-value">12</div>
+                            </div>
+                        </div>
+                    </div>
+                    */}
+                </div>
+            );
+        };
+
+        // Sign Off Tab Component
+        const SignOffTab = () => {
+            const [currentDate] = useState(new Date());
+            const [selectedTrain, setSelectedTrain] = useState('august_t1'); // Default to first train
+            const [selectedSignOffType, setSelectedSignOffType] = useState('qa'); // Default to QA sign off
+            const [selectedPod, setSelectedPod] = useState('apps_core'); // Default to Apps core
+            const [openDropdown, setOpenDropdown] = useState(null); // 'train', 'signoff', 'pod', or null
+
+            const formatCurrentDate = (date) => {
+                return date.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            };
+
+            const handleTrainChange = (trainId) => {
+                setSelectedTrain(trainId);
+                setOpenDropdown(null);
+            };
+
+            const handleSignOffTypeChange = (signOffType) => {
+                setSelectedSignOffType(signOffType);
+                setOpenDropdown(null);
+            };
+
+            const handlePodChange = (podId) => {
+                setSelectedPod(podId);
+                setOpenDropdown(null);
+            };
+
+            const handleDropdownToggle = (dropdownType) => {
+                if (openDropdown === dropdownType) {
+                    setOpenDropdown(null);
+                } else {
+                    setOpenDropdown(dropdownType);
+                }
+            };
+
+            return (
+                <div className="content-area">
+                    <div className="current-date">
+                        <h2>Sign Off Management</h2>
+                        <div className="date-display">{formatCurrentDate(currentDate)}</div>
+                    </div>
+                    
+                    <div className="signoff-layout">
+                        <div className="signoff-controls">
+                            <div className="dropdown-section">
+                                <h3 className="dropdown-heading">Train</h3>
+                                <SignOffTrainSelector 
+                                    selectedTrain={selectedTrain}
+                                    onTrainChange={handleTrainChange}
+                                    isOpen={openDropdown === 'train'}
+                                    onToggle={() => handleDropdownToggle('train')}
+                                />
+                            </div>
+                            
+                            <div className="dropdown-section">
+                                <h3 className="dropdown-heading">Sign off</h3>
+                                <SignOffTypeSelector 
+                                    selectedSignOffType={selectedSignOffType}
+                                    onSignOffTypeChange={handleSignOffTypeChange}
+                                    isOpen={openDropdown === 'signoff'}
+                                    onToggle={() => handleDropdownToggle('signoff')}
+                                />
+                            </div>
+
+                            <div className="dropdown-section">
+                                <h3 className="dropdown-heading">Pod</h3>
+                                <PodSelector 
+                                    selectedPod={selectedPod}
+                                    onPodChange={handlePodChange}
+                                    isOpen={openDropdown === 'pod'}
+                                    onToggle={() => handleDropdownToggle('pod')}
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="signoff-calendar">
+                            <Calendar selectedCalendar={selectedTrain} />
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Sign Off Type Selector Component
+        const SignOffTypeSelector = ({ selectedSignOffType, onSignOffTypeChange, isOpen, onToggle }) => {
+            const signOffTypes = [
+                { id: 'qa', name: 'QA Sign Off', icon: '🧪' },
+                { id: 'integration', name: 'Integration and Regression Sign Off', icon: '🔗' },
+                { id: 'bi', name: 'BI Sign Off', icon: '📊' }
+            ];
+            
+            const handleSelect = (signOffTypeId) => {
+                onSignOffTypeChange(signOffTypeId);
+            };
+
+            const getSelectedSignOffTypeName = () => {
+                const signOffType = signOffTypes.find(type => type.id === selectedSignOffType);
+                return signOffType ? signOffType.name : 'Select Sign Off Type';
+            };
+
+            const getSelectedSignOffTypeIcon = () => {
+                const signOffType = signOffTypes.find(type => type.id === selectedSignOffType);
+                return signOffType ? signOffType.icon : '📋';
+            };
+
+            return (
+                <div className="calendar-selector">
+                    <div 
+                        className="calendar-selector-header"
+                        onClick={onToggle}
+                    >
+                        <span className="selected-calendar">
+                            {getSelectedSignOffTypeIcon()} {getSelectedSignOffTypeName()}
+                        </span>
+                        <span className="dropdown-arrow">
+                            {isOpen ? '▲' : '▼'}
+                        </span>
+                    </div>
+                    
+                    {isOpen && (
+                        <div className="calendar-dropdown">
+                            {signOffTypes.map(signOffType => (
+                                <div 
+                                    key={signOffType.id}
+                                    className={`calendar-option ${selectedSignOffType === signOffType.id ? 'selected' : ''}`}
+                                    onClick={() => handleSelect(signOffType.id)}
+                                >
+                                    <span className="signoff-type-icon">
+                                        {signOffType.icon}
+                                    </span>
+                                    {signOffType.name}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // Sign Off Train Selector Component (without "All Trains" option)
+        const SignOffTrainSelector = ({ selectedTrain, onTrainChange, isOpen, onToggle }) => {
+            const calendars = CalendarManager.getAllCalendars();
+            
+            const handleSelect = (trainId) => {
+                onTrainChange(trainId);
+            };
+
+            const getSelectedTrainName = () => {
+                const calendar = CalendarManager.getCalendarById(selectedTrain);
+                return calendar ? calendar.name : 'Select Train';
+            };
+
+            return (
+                <div className="calendar-selector">
+                    <div 
+                        className="calendar-selector-header"
+                        onClick={onToggle}
+                    >
+                        <span className="selected-calendar">
+                            ✍️ {getSelectedTrainName()}
+                        </span>
+                        <span className="dropdown-arrow">
+                            {isOpen ? '▲' : '▼'}
+                        </span>
+                    </div>
+                    
+                    {isOpen && (
+                        <div className="calendar-dropdown">
+                            {calendars.map(calendar => (
+                                <div 
+                                    key={calendar.id}
+                                    className={`calendar-option ${selectedTrain === calendar.id ? 'selected' : ''}`}
+                                    onClick={() => handleSelect(calendar.id)}
+                                >
+                                    <span 
+                                        className="calendar-color" 
+                                        style={{backgroundColor: calendar.color}}
+                                    />
+                                    {calendar.name}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // Pod Selector Component
+        const PodSelector = ({ selectedPod, onPodChange, isOpen, onToggle }) => {
+            const pods = [
+                { id: 'apps_core', name: 'Apps core', icon: '📱' }
+            ];
+            
+            const handleSelect = (podId) => {
+                onPodChange(podId);
+            };
+
+            const getSelectedPodName = () => {
+                const pod = pods.find(p => p.id === selectedPod);
+                return pod ? pod.name : 'Select Pod';
+            };
+
+            const getSelectedPodIcon = () => {
+                const pod = pods.find(p => p.id === selectedPod);
+                return pod ? pod.icon : '📱';
+            };
+
+            return (
+                <div className="calendar-selector">
+                    <div 
+                        className="calendar-selector-header"
+                        onClick={onToggle}
+                    >
+                        <span className="selected-calendar">
+                            {getSelectedPodIcon()} {getSelectedPodName()}
+                        </span>
+                        <span className="dropdown-arrow">
+                            {isOpen ? '▲' : '▼'}
+                        </span>
+                    </div>
+                    
+                    {isOpen && (
+                        <div className="calendar-dropdown">
+                            {pods.map(pod => (
+                                <div 
+                                    key={pod.id}
+                                    className={`calendar-option ${selectedPod === pod.id ? 'selected' : ''}`}
+                                    onClick={() => handleSelect(pod.id)}
+                                >
+                                    <span className="pod-icon">
+                                        {pod.icon}
+                                    </span>
+                                    {pod.name}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // Empty Integrations Tab Component
+        const IntegrationsTab = () => {
+            return (
+                <div className="content-area">
+                    <div className="current-date">
+                        <h2>Integrations</h2>
+                        <div className="date-display">-</div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Empty Settings Tab Component
+        const SettingsTab = () => {
+            return (
+                <div className="content-area">
+                    <div className="current-date">
+                        <h2>Settings</h2>
+                        <div className="date-display">-</div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('Dashboard');
+            const [eventsLoaded, setEventsLoaded] = useState(false);
+
+            // Load events when component mounts
+            React.useEffect(() => {
+                const loadEvents = async () => {
+                    await MultiDayEventManager.loadEventsFromFile();
+                    setEventsLoaded(true);
+                };
+                loadEvents();
+            }, []);
+
+            const renderContent = () => {
+                switch(activeTab) {
+                    case 'ReleaseCalendar':
+                        return <ReleaseTrainsTab />;
+                    case 'SignOff':
+                        return <SignOffTab />;
+                    case 'Integrations':
+                        return <IntegrationsTab />;
+                    case 'Settings':
+                        return <SettingsTab />;
+                    case 'Dashboard':
+                    default:
+                        return <DashboardContent />;
+                }
+            };
+
+            return (
+                <div className="app">
+                    <QuickAccessBar activeTab={activeTab} onTabChange={setActiveTab} />
+                    {renderContent()}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
